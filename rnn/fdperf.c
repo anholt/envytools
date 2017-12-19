@@ -420,6 +420,11 @@ select_counter(struct counter_group *group, int ctr, int n)
 		OUT_PKT3(ring, CP_WAIT_FOR_IDLE, 1);
 		OUT_RING(ring, 0x00000000);
 
+		if (group->reg[ctr].enable_off) {
+			OUT_PKT0(ring, group->reg[ctr].enable_off, 1);
+			OUT_RING(ring, 0);
+		}
+
 		if (group->reg[ctr].clear_off) {
 			OUT_PKT0(ring, group->reg[ctr].clear_off, 1);
 			OUT_RING(ring, 1);
@@ -439,6 +444,11 @@ select_counter(struct counter_group *group, int ctr, int n)
 		break;
 	case 5:
 		OUT_PKT7(ring, CP_WAIT_FOR_IDLE, 0);
+
+		if (group->reg[ctr].enable_off) {
+			OUT_PKT4(ring, group->reg[ctr].enable_off, 1);
+			OUT_RING(ring, 0);
+		}
 
 		if (group->reg[ctr].clear_off) {
 			OUT_PKT4(ring, group->reg[ctr].clear_off, 1);
