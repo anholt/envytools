@@ -48,7 +48,7 @@
 #include "rnndec.h"
 
 
-#define MAX_CNTR_PER_GROUP 12
+#define MAX_CNTR_PER_GROUP 24
 
 /* NOTE first counter group should always be CP, since we unconditionally
  * use CP counter to measure the gpu freq.
@@ -383,7 +383,17 @@ find_device(void)
 
 	printf("i/o region at %08lx (size: %x)\n", dev.base, dev.size);
 
-	find_freqs();
+	/* try MAX_FREQ first as that will work regardless of old dt
+	 * dt bindings vs upstream bindings:
+	 */
+	ret = fd_pipe_get_param(dev.pipe, FD_MAX_FREQ, &val);
+	if (ret) {
+		printf("falling back to parsing DT bindings for freq\n");
+		find_freqs();
+	} else {
+		dev.min_freq = 0;
+		dev.max_freq = val;
+	}
 
 	printf("min_freq=%u, max_freq=%u\n", dev.min_freq, dev.max_freq);
 
@@ -443,6 +453,7 @@ select_counter(struct counter_group *group, int ctr, int n)
 
 		break;
 	case 5:
+	case 6:
 		OUT_PKT7(ring, CP_WAIT_FOR_IDLE, 0);
 
 		if (group->reg[ctr].enable_off) {
@@ -1331,6 +1342,80 @@ static struct counter_group a5xx_counters[] = {
 	}},
 };
 
+static struct counter_group a6xx_counters[] = {
+	{ "CP", "a6xx_cp_perfcounter_select", 14, {
+		{ "CP_PERFCTR_CP_SEL_0",  "RBBM_PERFCTR_CP_0_HI",  "RBBM_PERFCTR_CP_0_LO" },
+		{ "CP_PERFCTR_CP_SEL_1",  "RBBM_PERFCTR_CP_1_HI",  "RBBM_PERFCTR_CP_1_LO" },
+		{ "CP_PERFCTR_CP_SEL_2",  "RBBM_PERFCTR_CP_2_HI",  "RBBM_PERFCTR_CP_2_LO" },
+		{ "CP_PERFCTR_CP_SEL_3",  "RBBM_PERFCTR_CP_3_HI",  "RBBM_PERFCTR_CP_3_LO" },
+		{ "CP_PERFCTR_CP_SEL_4",  "RBBM_PERFCTR_CP_4_HI",  "RBBM_PERFCTR_CP_4_LO" },
+		{ "CP_PERFCTR_CP_SEL_5",  "RBBM_PERFCTR_CP_5_HI",  "RBBM_PERFCTR_CP_5_LO" },
+		{ "CP_PERFCTR_CP_SEL_6",  "RBBM_PERFCTR_CP_6_HI",  "RBBM_PERFCTR_CP_6_LO" },
+		{ "CP_PERFCTR_CP_SEL_7",  "RBBM_PERFCTR_CP_7_HI",  "RBBM_PERFCTR_CP_7_LO" },
+		{ "CP_PERFCTR_CP_SEL_8",  "RBBM_PERFCTR_CP_8_HI",  "RBBM_PERFCTR_CP_8_LO" },
+		{ "CP_PERFCTR_CP_SEL_9",  "RBBM_PERFCTR_CP_9_HI",  "RBBM_PERFCTR_CP_9_LO" },
+		{ "CP_PERFCTR_CP_SEL_10", "RBBM_PERFCTR_CP_10_HI", "RBBM_PERFCTR_CP_10_LO" },
+		{ "CP_PERFCTR_CP_SEL_11", "RBBM_PERFCTR_CP_11_HI", "RBBM_PERFCTR_CP_11_LO" },
+		{ "CP_PERFCTR_CP_SEL_12", "RBBM_PERFCTR_CP_12_HI", "RBBM_PERFCTR_CP_12_LO" },
+		{ "CP_PERFCTR_CP_SEL_13", "RBBM_PERFCTR_CP_13_HI", "RBBM_PERFCTR_CP_13_LO" },
+	}},
+	// TODO CCU
+	// TODO GRAS RAS
+	// TODO GRAS TSE
+	{ "HLSQ", "a6xx_hlsq_perfcounter_select", 6, {
+		{ "HLSQ_PERFCTR_HLSQ_SEL_0", "RBBM_PERFCTR_HLSQ_0_HI", "RBBM_PERFCTR_HLSQ_0_LO" },
+		{ "HLSQ_PERFCTR_HLSQ_SEL_1", "RBBM_PERFCTR_HLSQ_1_HI", "RBBM_PERFCTR_HLSQ_1_LO" },
+		{ "HLSQ_PERFCTR_HLSQ_SEL_2", "RBBM_PERFCTR_HLSQ_2_HI", "RBBM_PERFCTR_HLSQ_2_LO" },
+		{ "HLSQ_PERFCTR_HLSQ_SEL_3", "RBBM_PERFCTR_HLSQ_3_HI", "RBBM_PERFCTR_HLSQ_3_LO" },
+		{ "HLSQ_PERFCTR_HLSQ_SEL_4", "RBBM_PERFCTR_HLSQ_4_HI", "RBBM_PERFCTR_HLSQ_4_LO" },
+		{ "HLSQ_PERFCTR_HLSQ_SEL_5", "RBBM_PERFCTR_HLSQ_5_HI", "RBBM_PERFCTR_HLSQ_5_LO" },
+	}},
+	{ "PC", "a6xx_pc_perfcounter_select", 8, {
+		{ "PC_PERFCTR_PC_SEL_0", "RBBM_PERFCTR_PC_0_HI", "RBBM_PERFCTR_PC_0_LO" },
+		{ "PC_PERFCTR_PC_SEL_1", "RBBM_PERFCTR_PC_1_HI", "RBBM_PERFCTR_PC_1_LO" },
+		{ "PC_PERFCTR_PC_SEL_2", "RBBM_PERFCTR_PC_2_HI", "RBBM_PERFCTR_PC_2_LO" },
+		{ "PC_PERFCTR_PC_SEL_3", "RBBM_PERFCTR_PC_3_HI", "RBBM_PERFCTR_PC_3_LO" },
+		{ "PC_PERFCTR_PC_SEL_4", "RBBM_PERFCTR_PC_4_HI", "RBBM_PERFCTR_PC_4_LO" },
+		{ "PC_PERFCTR_PC_SEL_5", "RBBM_PERFCTR_PC_5_HI", "RBBM_PERFCTR_PC_5_LO" },
+		{ "PC_PERFCTR_PC_SEL_6", "RBBM_PERFCTR_PC_6_HI", "RBBM_PERFCTR_PC_6_LO" },
+		{ "PC_PERFCTR_PC_SEL_7", "RBBM_PERFCTR_PC_7_HI", "RBBM_PERFCTR_PC_7_LO" },
+	}},
+	// TODO RB
+	// TODO RBBM
+	{ "SP", "a6xx_sp_perfcounter_select", 24, {
+		{ "SP_PERFCTR_SP_SEL_0",  "RBBM_PERFCTR_SP_0_HI",  "RBBM_PERFCTR_SP_0_LO" },
+		{ "SP_PERFCTR_SP_SEL_1",  "RBBM_PERFCTR_SP_1_HI",  "RBBM_PERFCTR_SP_1_LO" },
+		{ "SP_PERFCTR_SP_SEL_2",  "RBBM_PERFCTR_SP_2_HI",  "RBBM_PERFCTR_SP_2_LO" },
+		{ "SP_PERFCTR_SP_SEL_3",  "RBBM_PERFCTR_SP_3_HI",  "RBBM_PERFCTR_SP_3_LO" },
+		{ "SP_PERFCTR_SP_SEL_4",  "RBBM_PERFCTR_SP_4_HI",  "RBBM_PERFCTR_SP_4_LO" },
+		{ "SP_PERFCTR_SP_SEL_5",  "RBBM_PERFCTR_SP_5_HI",  "RBBM_PERFCTR_SP_5_LO" },
+		{ "SP_PERFCTR_SP_SEL_6",  "RBBM_PERFCTR_SP_6_HI",  "RBBM_PERFCTR_SP_6_LO" },
+		{ "SP_PERFCTR_SP_SEL_7",  "RBBM_PERFCTR_SP_7_HI",  "RBBM_PERFCTR_SP_7_LO" },
+		{ "SP_PERFCTR_SP_SEL_8",  "RBBM_PERFCTR_SP_8_HI",  "RBBM_PERFCTR_SP_8_LO" },
+		{ "SP_PERFCTR_SP_SEL_9",  "RBBM_PERFCTR_SP_9_HI",  "RBBM_PERFCTR_SP_9_LO" },
+		{ "SP_PERFCTR_SP_SEL_10", "RBBM_PERFCTR_SP_10_HI", "RBBM_PERFCTR_SP_10_LO" },
+		{ "SP_PERFCTR_SP_SEL_11", "RBBM_PERFCTR_SP_11_HI", "RBBM_PERFCTR_SP_11_LO" },
+		{ "SP_PERFCTR_SP_SEL_12", "RBBM_PERFCTR_SP_12_HI", "RBBM_PERFCTR_SP_12_LO" },
+		{ "SP_PERFCTR_SP_SEL_13", "RBBM_PERFCTR_SP_13_HI", "RBBM_PERFCTR_SP_13_LO" },
+		{ "SP_PERFCTR_SP_SEL_14", "RBBM_PERFCTR_SP_14_HI", "RBBM_PERFCTR_SP_14_LO" },
+		{ "SP_PERFCTR_SP_SEL_15", "RBBM_PERFCTR_SP_15_HI", "RBBM_PERFCTR_SP_15_LO" },
+		{ "SP_PERFCTR_SP_SEL_16", "RBBM_PERFCTR_SP_16_HI", "RBBM_PERFCTR_SP_16_LO" },
+		{ "SP_PERFCTR_SP_SEL_17", "RBBM_PERFCTR_SP_17_HI", "RBBM_PERFCTR_SP_17_LO" },
+		{ "SP_PERFCTR_SP_SEL_18", "RBBM_PERFCTR_SP_18_HI", "RBBM_PERFCTR_SP_18_LO" },
+		{ "SP_PERFCTR_SP_SEL_19", "RBBM_PERFCTR_SP_19_HI", "RBBM_PERFCTR_SP_19_LO" },
+		{ "SP_PERFCTR_SP_SEL_20", "RBBM_PERFCTR_SP_20_HI", "RBBM_PERFCTR_SP_20_LO" },
+		{ "SP_PERFCTR_SP_SEL_21", "RBBM_PERFCTR_SP_21_HI", "RBBM_PERFCTR_SP_21_LO" },
+		{ "SP_PERFCTR_SP_SEL_22", "RBBM_PERFCTR_SP_22_HI", "RBBM_PERFCTR_SP_22_LO" },
+		{ "SP_PERFCTR_SP_SEL_23", "RBBM_PERFCTR_SP_23_HI", "RBBM_PERFCTR_SP_23_LO" },
+	}},
+	// TODO TP
+	// TODO UCHE
+	// TODO VFD
+	// TODO VPC
+	// TODO VSC
+	// TODO VBIF
+};
+
 /*
  * main
  */
@@ -1363,6 +1448,11 @@ main(int argc, char **argv)
 		dev.dom = rnn_finddomain(db, "A5XX");
 		dev.groups = a5xx_counters;
 		dev.ngroups = ARRAY_SIZE(a5xx_counters);
+		break;
+	case 6:
+		dev.dom = rnn_finddomain(db, "A6XX");
+		dev.groups = a6xx_counters;
+		dev.ngroups = ARRAY_SIZE(a6xx_counters);
 		break;
 	default:
 		errx(1, "unsupported device");
