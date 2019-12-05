@@ -1019,7 +1019,7 @@ static void prepvarinfo (struct rnndb *db, char *what, struct rnnvarinfo *vi, st
 	if (vi->variantsstr) {
 		char *vars = vi->variantsstr;
 		if (!varset) {
-			fprintf (stderr, "%s: tried to use variants without active varset!\n", what);
+			//fprintf (stderr, "%s: tried to use variants without active varset!\n", what);
 			db->estatus = 1;
 			return;
 		}
