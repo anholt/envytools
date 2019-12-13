@@ -56,7 +56,6 @@ static bool no_color = false;
 static bool summary = false;
 static bool allregs = false;
 static bool dump_textures = false;
-static bool is_blob = false;
 static int vertices;
 static unsigned gpu_id = 220;
 
@@ -1827,12 +1826,6 @@ static void cp_nop(uint32_t *dwords, uint32_t sizedwords, int level)
 	if (quiet(3))
 		return;
 
-	// blob doesn't use CP_NOP for string_marker but it does
-	// use it for things that end up looking like, but aren't
-	// ascii chars:
-	if (is_blob)
-		return;
-
 	for (i = 0; i < 4 * sizedwords; i++) {
 		if (buf[i] == '\0')
 			break;
@@ -2839,7 +2832,6 @@ static int handle_file(const char *filename, int start, int end, int draw)
 			printl(1, "test: %s\n", (char *)buf);
 			break;
 		case RD_CMD:
-			is_blob = true;
 			printl(2, "cmd: %s\n", (char *)buf);
 			// hack to skip xserver cmdstream
 			//skip = ((char *)buf)[0] == 'X';
