@@ -2169,7 +2169,7 @@ cp_set_draw_state(uint32_t *dwords, uint32_t sizedwords, int level)
 		ds->count = count;
 		ds->addr  = addr;
 
-		if (flags & FLAG_LOAD_IMMED) {
+		if ((flags & FLAG_LOAD_IMMED) || count) {
 			load_group(group_id, level);
 			disable_group(group_id);
 		}
