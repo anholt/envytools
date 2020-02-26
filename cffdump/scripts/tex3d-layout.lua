@@ -15,6 +15,7 @@ io.write("Analyzing Data...\n")
 local allblits = {}
 local nallblits = 0
 local r = rnn.init("a630")
+local found_tex = 0
 
 function minify(val, lvls)
   val = val >> lvls
@@ -53,7 +54,7 @@ function draw(primtype, nindx)
   blit.addr    = r.RB_2D_DST_LO | (r.RB_2D_DST_HI << 32)
   blit.base    = bos.base(blit.addr)
   blit.endaddr = 0  -- filled in later
-  --printf("Found blit: 0x%x (0x%x)\n", blit.addr, blit.base)
+  printf("Found blit: 0x%x (0x%x)\n", blit.addr, blit.base)
 
   allblits[nallblits] = blit
   nallblits = nallblits + 1
@@ -62,17 +63,19 @@ end
 function A6XX_TEX_CONST(pkt, size)
   -- ignore any texture state w/ DEPTH=1, these aren't the 3d tex state we
   -- are looking for
-  if pkt[5].DEPTH <= 1 then
-    return
-  end
 
   local base = pkt[4].BASE_LO | (pkt[5].BASE_HI << 32)
   local width0  = pkt[1].WIDTH
   local height0 = pkt[1].HEIGHT
   local depth0  = pkt[5].DEPTH
 
-  printf("Found texture state: %ux%ux%u (MIN_LAYERSZ=0x%x)\n",
-         width0, height0, depth0, pkt[3].MIN_LAYERSZ)
+  if (found_tex ~= 0) then
+    return
+  end
+  found_tex = 1
+
+  printf("Found texture state: %ux%ux%u (%s, MIN_LAYERSZ=0x%x)\n",
+         width0, height0, depth0, pkt[0].TILE_MODE, pkt[3].MIN_LAYERSZ)
 
   -- Note that in some case the texture has some extra page or so
   -- at the beginning:
@@ -110,6 +113,7 @@ function A6XX_TEX_CONST(pkt, size)
     if w ~= blit.width or h ~= blit.height then
       level = level + 1
       layer = 0
+
 
       if blit.width ~= minify(w, 1) or blit.height ~= minify(h, 1) then
         printf("I am confused! %ux%u vs %ux%u\n", blit.width, blit.height, minify(w, 1), minify(h, 1))
